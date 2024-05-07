@@ -6,8 +6,8 @@ import path from 'path';
 import * as pty from 'node-pty'
 
 interface FileTreeNode {
+    id: number;
     name: string;
-    type: 'file' | 'directory';
     children?: FileTreeNode[];
 }
 
@@ -31,23 +31,23 @@ const httpServer = app.listen(PORT, () => {
 const wss = new WebSocketServer({server: httpServer})
 
 wss.on('connection', ws => {
+    let userCommand = ""
     ws.on('message', data => {
         try {
-            ptyProcess.write(data.toString()+"\r");
+            ptyProcess.write(data.toString() + "\r");
+            userCommand = data.toString()
         } catch (error) {
             ws.send(`Error: ${error}`);
         }
-        ptyProcess.onData(data => {
-            try {
-                ws.send(data.toString().replace(/[\x00-\x1F\x7F-\x9F\u001B\u009B][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[ -\/@-~]/g, '')
-            );
-            } catch (error) {
-                console.error('Error sending data to WebSocket client:', error);
-            }
-        });
+    });
+    ptyProcess.onData(data => {
+        try {
+            ws.send(data.toString().replace(userCommand, ''));
+        } catch (error) {
+            console.error('Error sending data to WebSocket client:', error);
+        }
     });
 });
-
 
 app.get('/files', async (_, res) => {
     try {
@@ -61,14 +61,15 @@ app.get('/files', async (_, res) => {
 async function generateFileTree(dirPath: string): Promise<FileTreeNode[]> {
     const files: string[] = await fs.readdir(dirPath);
     const fileTree: FileTreeNode[] = [];
+    let id = 1;
 
     for (const file of files) {
         const filePath = path.join(dirPath, file);
         const stats = await fs.stat(filePath);
 
         const node: FileTreeNode = {
+            id: id++,
             name: file,
-            type: stats.isDirectory() ? 'directory' : 'file'
         };
 
         if (stats.isDirectory()) {
