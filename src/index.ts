@@ -8,6 +8,8 @@ import * as pty from 'node-pty'
 interface FileTreeNode {
     id: number;
     name: string;
+    type: 'directory' | 'file';
+    filePath: string; // Add filePath property
     children?: FileTreeNode[];
 }
 
@@ -15,6 +17,7 @@ const PORT = process.env.PORT || 8000
 
 const app = express()
 app.use(CORS())
+app.use(express.json())
 
 var ptyProcess = pty.spawn('bash', [], {
   name: 'xterm-color',
@@ -58,18 +61,36 @@ app.get('/files', async (_, res) => {
     }
 })
 
+app.get('/file', async (req, res) => {
+    const { filePath } = req.query;
+
+    if (!filePath) {
+        return res.status(400).send('File name parameter is missing.');
+    }
+
+    try{
+        await fs.access(filePath as string, fs.constants.R_OK | fs.constants.W_OK)
+        const contents = await fs.readFile(filePath as string, { encoding: 'utf8' });
+        res.status(200).json({contents})
+    }
+    catch(e){
+        res.status(400).send("File Not Found")
+    }
+});
+
 async function generateFileTree(dirPath: string): Promise<FileTreeNode[]> {
     const files: string[] = await fs.readdir(dirPath);
     const fileTree: FileTreeNode[] = [];
-    let id = 1;
 
     for (const file of files) {
         const filePath = path.join(dirPath, file);
         const stats = await fs.stat(filePath);
 
         const node: FileTreeNode = {
-            id: id++,
+            id: 1,
             name: file,
+            type: stats.isDirectory() ? 'directory' : 'file',
+            filePath: filePath, // Set filePath property
         };
 
         if (stats.isDirectory()) {
