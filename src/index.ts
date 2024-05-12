@@ -23,7 +23,7 @@ var ptyProcess = pty.spawn('bash', [], {
   name: 'xterm-color',
   cols: 120,
   rows: 30,
-  cwd: '../user',
+  cwd: process.env.CWD,
   env: process.env
 });
 
@@ -31,6 +31,7 @@ const httpServer = app.listen(PORT, () => {
     console.log(`Server started at port ${PORT}`)
 })
 
+//Websocket Logic
 const wss = new WebSocketServer({server: httpServer})
 
 wss.on('connection', ws => {
@@ -62,6 +63,7 @@ wss.on('connection', ws => {
     });
 });
 
+//HTTP Endpoints
 app.get('/files', async (_, res) => {
     try {
         const fileTree = await generateFileTree("../user")
@@ -81,7 +83,7 @@ app.get('/file', async (req, res) => {
     try{
         await fs.access(filePath as string, fs.constants.R_OK | fs.constants.W_OK)
         const contents = await fs.readFile(filePath as string, { encoding: 'utf8' });
-        res.status(200).json({code: contents, filePath})
+        res.status(200).json({contents: contents, filePath})
     }
     catch(e){
         res.status(400).send("File Not Found")
@@ -90,20 +92,40 @@ app.get('/file', async (req, res) => {
 
 app.get('/run', (_, res) => {
     try{
-        ptyProcess.write('node index.js' + '\r')
-        res.status(200).send("Executed Succesfully")
+        exec('node ../user/index.js', (error, stdout, stderr) => {
+            if (error) {
+                res.status(200).send(error.message)
+                return;
+            }
+            if (stderr) {
+                res.status(200).send(`stderr: ${stderr}`)
+                return;
+            }
+            res.status(200).json(stdout)
+        });
     }
     catch(e){
-        res.send(400).send("Unexpected error occured")
+        res.status(400).send("Unexpected error occured")
     }
 })
 
 app.put('/code', async (req, res) => {
     try{
-        const { code, filePath } = req.body.data
+        const { code, filePath } = req.body
         await fs.access(filePath as string, fs.constants.R_OK | fs.constants.W_OK)
         await fs.writeFile(filePath as string, code)
-        res.send(200)
+        res.status(200).send("Contents Updated")
+    }
+    catch(e){
+        res.status(400).send("Unexpected error occured")
+    }
+})
+
+app.post('/new', async (req, res) => {
+    try{
+        const { filePath } = req.body
+        await fs.writeFile(filePath, "")
+        res.status(200).send("File Created Succesfully")
     }
     catch(e){
         res.status(400).send("Unexpected error occured")
