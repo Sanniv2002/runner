@@ -1,6 +1,9 @@
-name: Linting and formatting on PR
+name: Linting and formatting on PR and Push
 on:
   pull_request:
+    branches:
+      - '**'
+  push:
     branches:
       - '**'
     
