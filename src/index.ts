@@ -6,7 +6,7 @@ import handleWebSocket from './ws'
 const PORT = process.env.PORT || 8000
 
 const httpServer = app.listen(PORT, () => {
-    console.log(`Server started on PORT ${PORT}`)
+    console.log(`Server listening on PORT ${PORT}`)
 })
 
 const wss = new WebSocketServer({server: httpServer})
