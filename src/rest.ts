@@ -2,10 +2,13 @@
 
 import express from 'express'
 import CORS from 'cors'
+import redis from 'ioredis'
 import { exec } from 'child_process'
 import { createFile, generateFileTree, readFileContents, updateFile } from './files'
 
 const app = express()
+const client = redis.createClient();
+
 app.use(CORS())
 app.use(express.json())
 
@@ -57,7 +60,10 @@ app.put('/code', async (req, res) => {
     try{
         const { code, filePath } = req.body
         await updateFile(filePath, code)
-        res.status(200).send("Contents Updated")
+        await client.lpush(filePath, code)
+        res.status(200).json({
+            message: "Added to queue will be processed"
+        })
     }
     catch(e){
         res.status(400).send("Unexpected error occured")
