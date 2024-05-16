@@ -15,7 +15,8 @@ const generateFileTree = async (dirPath: string): Promise<FileTreeNode[]> => {
     const fileTree: FileTreeNode[] = [];
 
     for (const file of files) {
-        const filePath = path.join(dirPath, file);
+        const relativeFilePath = path.join(dirPath, file);
+        const filePath = path.resolve(relativeFilePath);
         const stats = await fs.stat(filePath);
 
         if (file === 'node_modules' && stats.isDirectory()) {

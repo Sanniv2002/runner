@@ -8,9 +8,9 @@ local function process_queue(key)
     local result = nil
 
     if len > 1 then
-        result = redis.call('RPOP', key)
-    elseif len == 1 then
         result = redis.call('LPOP', key)
+    elseif len == 1 then
+        result = redis.call('RPOP', key)
     end
 
     -- Empty the queue

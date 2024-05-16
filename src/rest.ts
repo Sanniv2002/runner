@@ -14,7 +14,7 @@ app.use(express.json())
 
 app.get('/files', async (_, res) => {
     try {
-        const fileTree = await generateFileTree("../user")
+        const fileTree = await generateFileTree("/home/sanniv/Cloud IDE/user")
         res.json({ tree: fileTree })
     } catch (error) {
         res.status(500).json({ error: "Internal server error" })
@@ -38,8 +38,9 @@ app.get('/file', async (req, res) => {
 });
 
 app.get('/run', (_, res) => {
+    const scriptPath = '"/home/sanniv/Cloud IDE/user/index.js"'
     try{
-        exec('node ../user/index.js', (error, stdout, stderr) => { //Path needs to updated when deployed
+        exec(`node ${scriptPath}`, (error, stdout, stderr) => { //Path needs to updated when deployed
             if (error) {
                 res.status(200).send(error.message)
                 return;
@@ -59,7 +60,7 @@ app.get('/run', (_, res) => {
 app.put('/code', async (req, res) => {
     try{
         const { code, filePath } = req.body
-        await updateFile(filePath, code)
+        //await updateFile(filePath, code)
         await client.lpush(filePath, code)
         res.status(200).json({
             message: "Added to queue will be processed"
