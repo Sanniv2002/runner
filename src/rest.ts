@@ -2,22 +2,30 @@
 
 import express from 'express'
 import CORS from 'cors'
-import redis from 'ioredis'
+import Redis from 'ioredis'
 import { exec } from 'child_process'
-import { createFile, generateFileTree, readFileContents, updateFile } from './files'
+import { createFile, generateFileTree, readFileContents } from './files'
 
+const fileBasePath = process.env.FILE_BASE_PATH || '/app/files';
 const app = express()
-const client = redis.createClient();
+const client = new Redis({
+    host: 'cache', // The service name of the Redis container
+    port: 6379
+  });
 
 app.use(CORS())
 app.use(express.json())
 
+app.get('/', (_, res) => {
+    res.status(200).json({ message: "Server is healthy!" })
+})
+
 app.get('/files', async (_, res) => {
     try {
-        const fileTree = await generateFileTree("/home/sanniv/Cloud IDE/user")
+        const fileTree = await generateFileTree(fileBasePath)
         res.json({ tree: fileTree })
-    } catch (error) {
-        res.status(500).json({ error: "Internal server error" })
+    } catch (e) {
+        res.status(500).json({ error: e })
     }
 })
 
@@ -38,9 +46,8 @@ app.get('/file', async (req, res) => {
 });
 
 app.get('/run', (_, res) => {
-    const scriptPath = '"/home/sanniv/Cloud IDE/user/index.js"'
     try{
-        exec(`node ${scriptPath}`, (error, stdout, stderr) => { //Path needs to updated when deployed
+        exec(`node ${fileBasePath}`, (error, stdout, stderr) => { //Path needs to updated when deployed
             if (error) {
                 res.status(200).send(error.message)
                 return;
@@ -72,14 +79,14 @@ app.put('/code', async (req, res) => {
 })
 
 app.post('/new', async (req, res) => {
-    try{
-        const { filePath } = req.body
-        await createFile(filePath)
-        res.status(200).send("File Created Succesfully")
+    try {
+        const { fileName } = req.body
+        const fullFilePath = `${fileBasePath}/${fileName}`;
+        await createFile(fullFilePath)
+        res.status(200).send("File Created Successfully")
+    } catch (e) {
+        res.status(400).send("Unexpected error occurred")
     }
-    catch(e){
-        res.status(400).send("Unexpected error occured")
-    }
-})
+});
 
 export default app
