@@ -10,7 +10,7 @@ const fileBasePath = process.env.FILE_BASE_PATH || '/app/files';
 const app = express()
 const client = new Redis({
     host: 'cache', // The service name of the Redis container
-    port: 6379
+    port: parseInt(process.env.REDIS_PORT || "6379", 10)
   });
 
 app.use(CORS())

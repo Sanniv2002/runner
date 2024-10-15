@@ -1,0 +1,55 @@
+version: "3.7"
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}
+      
+services:
+  runner:
+    container_name: runner-${PROJECT_NAME}
+    build:
+      context: .
+      target: production
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /host/path/to/files:/app/files
+    tty: true
+    stdin_open: true
+    depends_on:
+      - cache
+    ports:
+      - "${DYNAMIC_PORT}:8000"
+    networks:
+      - "${NETWORK_NAME}"
+    environment:
+      - FILE_BASE_PATH=/app/files
+      - TERM=xterm
+    command: node dist/index.js
+
+  queue_worker:
+    container_name: queue_worker-${PROJECT_NAME}
+    build:
+      context: .
+      target: production
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /host/path/to/files:/app/files
+    depends_on:
+      - cache
+    networks:
+      - "${NETWORK_NAME}"
+    command: node dist/Service.QueueWorker/index.js
+
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - "${NETWORK_NAME}"
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - "${CACHE_VOLUME_NAME}:/data"

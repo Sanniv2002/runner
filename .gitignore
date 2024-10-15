@@ -1,2 +1,4 @@
 dist
 node_modules
+log.txt
+generated_compose_files

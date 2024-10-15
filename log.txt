@@ -1,1 +1,1 @@
-Queue Length: 1, Write operations on disk: 22
+Queue Length: 1, Write operations on disk: 1
