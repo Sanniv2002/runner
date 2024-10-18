@@ -45,9 +45,10 @@ app.get('/file', async (req, res) => {
     }
 });
 
-app.get('/run', (_, res) => {
+app.post('/run', (req, res) => {
+    const { runtime } = req.body
     try{
-        exec(`node ${fileBasePath}`, (error, stdout, stderr) => { //Path needs to updated when deployed
+        exec(`${runtime} ${fileBasePath}`, (error, stdout, stderr) => { //Path needs to updated when deployed
             if (error) {
                 res.status(200).send(error.message)
                 return;

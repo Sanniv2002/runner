@@ -1,2 +1,11 @@
-node_modules
-dist/
+**/node_modules/
+**/dist
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
+.aws
+*.yml
+*.sh
+bun.lockb

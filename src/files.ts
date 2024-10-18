@@ -51,9 +51,13 @@ async function createFile(filePath: string){
 }
 
 async function readFileContents(filePath: string){
-    await fs.access(filePath as string, fs.constants.R_OK | fs.constants.W_OK)
-    const contents = await fs.readFile(filePath as string, { encoding: 'utf8' });
-    return contents
+    try{
+        await fs.access(filePath as string, fs.constants.R_OK | fs.constants.W_OK)
+        const contents = await fs.readFile(filePath as string, { encoding: 'utf8' });
+        return contents   
+    } catch (e) {
+        console.log(e)
+    }
 }
 
 export { generateFileTree, updateFile, createFile, readFileContents };

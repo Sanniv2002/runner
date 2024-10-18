@@ -25,4 +25,3 @@ COPY package*.json .
 RUN npm ci --only=production
 
 COPY --from=build /app/dist ./dist
-ADD default_files /app/files
